@@ -25,7 +25,6 @@ custom_app_settings() {
     export DOWNLOAD_URL=$(whiptail --title "Timed URL" \
     --inputbox "Timed URL from your profile's 'Purchased Licenses' page" 8 60 3>&1 1>&2 2>&3)
 }
-custom_app_settings
 
 function update_script() {
 #   header_info
@@ -67,10 +66,11 @@ function update_script() {
 }
 
 start
+custom_app_settings
 build_container
 description
 
 msg_ok "Completed successfully!\n"
 echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
 echo -e "${INFO}${YW}Access it using the following URL:${CL}"
-echo -e "${GATEWAY}${BGN}https://${IP}:5006${CL}"
+echo -e "${GATEWAY}${BGN}https://${IP}:30000${CL}"
