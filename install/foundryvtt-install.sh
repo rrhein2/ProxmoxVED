@@ -33,7 +33,9 @@ $STD unzip FoundryVTT*.zip*
 $STD rm FoundryVTT*.zip*
 if [[ $DOWNLOAD_URL =~ $release_version_regex ]]
 then
-    if [ ${BASH_REMATCH[1]} -ge 14 ]
+    major_version="${BASH_REMATCH[1]}"
+    minor_version="${BASH_REMATCH[2]}"
+    if [ "$major_version" -ge 14 ]
     then
         msg_info "Installing Node.js"
         NODE_VERSION="24" setup_nodejs
@@ -43,7 +45,7 @@ then
         NODE_VERSION="22" setup_nodejs
         msg_ok "Node.js installed"
     fi
-    RELEASE="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+    RELEASE="$major_version.$minor_version"
     echo "${RELEASE}" >/opt/foundryvtt/.release
 fi
 msg_ok "Installed FoundryVTT"
