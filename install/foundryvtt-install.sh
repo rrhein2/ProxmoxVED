@@ -21,7 +21,7 @@ update_os
 
 msg_info "Installing FoundryVTT"
 base_install_dir="/opt/foundryvtt"
-release_version_regex='^.*releases\/(\d+).(\d+).*$'
+release_version_regex="^.*releases\/([0-9]+).([0-9]+).*$"
 
 cd /opt
 
