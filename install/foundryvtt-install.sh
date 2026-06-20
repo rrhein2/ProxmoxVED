@@ -21,7 +21,7 @@ update_os
 
 msg_info "Installing FoundryVTT"
 base_install_dir="/opt/foundryvtt"
-release_version_regex="^.*releases\/([0-9]+).([0-9]+).*$"
+release_version_regex="^.*releases\/([0-9]+)\.([0-9]+).*$"
 
 cd /opt
 
@@ -31,19 +31,21 @@ cd "/opt/foundryvtt/foundryvtt"
 $STD wget -q "$DOWNLOAD_URL"
 $STD unzip FoundryVTT*.zip*
 $STD rm FoundryVTT*.zip*
-[[ $DOWNLOAD_URL =~ $release_version_regex ]]
-if [ ${BASH_REMATCH[1]} -ge 14 ]
+if [[ $DOWNLOAD_URL =~ $release_version_regex ]]
 then
-    msg_info "Installing Node.js"
-    NODE_VERSION="24" setup_nodejs
-    msg_ok "Node.js installed"
-else
-    msg_info "Installing Node.js"
-    NODE_VERSION="22" setup_nodejs
-    msg_ok "Node.js installed"
+    if [ ${BASH_REMATCH[1]} -ge 14 ]
+    then
+        msg_info "Installing Node.js"
+        NODE_VERSION="24" setup_nodejs
+        msg_ok "Node.js installed"
+    else
+        msg_info "Installing Node.js"
+        NODE_VERSION="22" setup_nodejs
+        msg_ok "Node.js installed"
+    fi
+    RELEASE="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+    echo "${RELEASE}" >/opt/foundryvtt/.release
 fi
-RELEASE="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
-echo "${RELEASE}" >/opt/foundryvtt/.release
 msg_ok "Installed FoundryVTT"
 
 msg_info "Creating Service"
