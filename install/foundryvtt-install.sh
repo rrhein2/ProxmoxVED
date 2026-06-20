@@ -17,7 +17,7 @@ msg_info "Installing Node.js"
 NODE_VERSION="22" setup_nodejs
 msg_ok "Node.js installed"
 
-create_self_signed_cert
+# create_self_signed_cert
 
 msg_info "Installing FoundryVTT"
 base_install_dir="/opt/foundryvtt"
@@ -48,15 +48,15 @@ cd /opt
 #   }
 # }
 # EOF
-mkdir -p "$base_install_dir/foundryvtt"
-mkdir -p "$base_install_dir/foundrydata"
-cd "$base_install_dir/foundryvtt"
+mkdir -p "/opt/foundryvtt/foundryvtt"
+mkdir -p "/opt/foundryvtt/foundrydata"
+cd "/opt/foundryvtt/foundryvtt"
 # $STD npm install --location=global @actual-app/sync-server
 wget -q "$DOWNLOAD_URL"
 unzip FoundryVTT*.zip*
-[[ $DOWNLOAD_URL =~ $release_version_regex ]]
-RELEASE=${BASH_REMATCH[1]}
-echo "${RELEASE}" >~/.foundryvtt
+# [[ $DOWNLOAD_URL =~ $release_version_regex ]]
+# RELEASE=${BASH_REMATCH[1]}
+# echo "${RELEASE}" >~/.foundryvtt
 msg_ok "Installed FoundryVTT"
 
 msg_info "Creating Service"
