@@ -14,7 +14,7 @@ network_check
 update_os
 
 msg_info "Installing Node.js"
-NODE_VERSION="22" setup_nodejs
+NODE_VERSION="24" setup_nodejs
 msg_ok "Node.js installed"
 
 # create_self_signed_cert
