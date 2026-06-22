@@ -28,9 +28,13 @@ cd /opt
 mkdir -p "/opt/foundryvtt/foundryvtt"
 mkdir -p "/opt/foundryvtt/foundrydata"
 cd "/opt/foundryvtt/foundryvtt"
-$STD wget -q "$DOWNLOAD_URL"
-$STD unzip FoundryVTT*.zip*
-$STD rm FoundryVTT*.zip*
+$STD wget -q --output-document=foundryvtt.zip "$DOWNLOAD_URL"
+if [ ! -f foundryvtt.zip ]
+  msg_error "${APP} could not be downloaded - aborting"
+  exit
+fi
+$STD unzip foundryvtt.zip
+$STD rm foundryvtt.zip
 if [[ $DOWNLOAD_URL =~ $release_version_regex ]]
 then
     major_version="${BASH_REMATCH[1]}"
@@ -45,10 +49,10 @@ then
         NODE_VERSION="22" setup_nodejs
         msg_ok "Node.js installed"
     fi
-    RELEASE="$major_version.$minor_version"
-    echo "${RELEASE}" >/opt/foundryvtt/.release
+    RELEASE="${major_version}.${minor_version}"
+    echo "${RELEASE}" > /opt/foundryvtt/.release
 fi
-msg_ok "Installed FoundryVTT"
+msg_ok "Installed ${APP} version ${RELEASE}"
 
 msg_info "Creating Service"
 cat <<EOF >/etc/systemd/system/foundryvtt.service

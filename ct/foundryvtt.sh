@@ -42,7 +42,7 @@ update_get_current_versions() {
 }
 
 update_get_latest_release_versions() {
-  wget -q --output-document=foundry_versions.js https://foundryvtt.com/releases/
+  $STD wget -q --output-document=foundry_versions.js https://foundryvtt.com/releases/
   published_majors=$(awk -v pattern='<h2 class="border">Version [0-9]+<\/h2>' '$0~pattern {print $3}' foundry_versions.js | sed 's/<\/h2>//g')
   published_minors=$(awk -v pattern="Release ${installed_major}.[0-9]{1,3}" '$0~pattern {print $NF}' foundry_versions.js | sed 's/<\/a>//g')
   # Convert from text output to a list
@@ -51,7 +51,7 @@ update_get_latest_release_versions() {
   published_majors=($published_majors)
   published_minors=($published_minors)
   IFS=$SAVE_IFS
-  rm foundry_versions.js
+  $STD rm foundry_versions.js
 }
 
 update_offer_minor_update() {
@@ -78,9 +78,9 @@ update_download_new_release() {
 }
 
 update_perform_backup() {
-  mv foundryvtt foundryvtt.bak
-  mkdir foundryvtt
-  mv foundryvtt.zip foundryvtt
+  $STD mv foundryvtt foundryvtt.bak
+  $STD mkdir foundryvtt
+  $STD mv foundryvtt.zip foundryvtt
 }
 
 update_install_new_release() {
@@ -95,8 +95,8 @@ update_install_new_release() {
   fi
 
   # Unpack download
-  unzip foundryvtt.zip
-  rm foundryvtt.zip
+  $STD unzip foundryvtt.zip
+  $STD rm foundryvtt.zip
 
   # Modify NODE.js version if necessary
   if [[ $DOWNLOAD_URL =~ $release_version_regex ]]
@@ -128,9 +128,9 @@ update_install_new_release() {
     rm -rf /opt/foundryvtt/foundryvtt.bak
   else
     msg_error "Failed to restart ${APP} with new version - reverting"
-    cd /opt/foundryvtt
-    rm -rf foundryvtt
-    mv foundryvtt.bak foundryvtt
+    $STD cd /opt/foundryvtt
+    $STD rm -rf foundryvtt
+    $STD mv foundryvtt.bak foundryvtt
     systemctl start foundryvtt
     return 1
   fi
@@ -186,12 +186,12 @@ function update_script() {
       fi
     else
       msg_error "Installed minor version of ${APP} is greater than any published version"
-      rm foundry_versions.js
+      $STD rm foundry_versions.js
       exit
     fi
   else
     msg_error "Installed major version of ${APP} greater than any published version"
-    rm foundry_versions.js
+    $STD rm foundry_versions.js
     exit
   fi
   update_cleanup
