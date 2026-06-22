@@ -30,6 +30,7 @@ mkdir -p "/opt/foundryvtt/foundrydata"
 cd "/opt/foundryvtt/foundryvtt"
 $STD wget -q --output-document=foundryvtt.zip "$DOWNLOAD_URL"
 if [ ! -f foundryvtt.zip ]
+then
   msg_error "${APP} could not be downloaded - aborting"
   exit
 fi
