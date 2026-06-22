@@ -31,7 +31,7 @@ cd "/opt/foundryvtt/foundryvtt"
 $STD wget -q --output-document=foundryvtt.zip "$DOWNLOAD_URL"
 if [ ! -f foundryvtt.zip ]
 then
-  msg_error "${APP} could not be downloaded - aborting"
+  msg_error "FoundryVTT could not be downloaded - aborting"
   exit
 fi
 $STD unzip foundryvtt.zip
@@ -53,7 +53,7 @@ then
     RELEASE="${major_version}.${minor_version}"
     echo "${RELEASE}" > /opt/foundryvtt/.release
 fi
-msg_ok "Installed ${APP} version ${RELEASE}"
+msg_ok "Installed FoundryVTT version ${RELEASE}"
 
 msg_info "Creating Service"
 cat <<EOF >/etc/systemd/system/foundryvtt.service
