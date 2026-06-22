@@ -200,7 +200,10 @@ function update_script() {
 }
 
 start
-custom_app_settings
+if command -v pveversion >/dev/null 2>&1
+then
+  custom_app_settings
+fi
 build_container
 description
 
