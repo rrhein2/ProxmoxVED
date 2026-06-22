@@ -44,7 +44,7 @@ update_get_current_versions() {
 update_get_latest_release_versions() {
   $STD wget -q --output-document=foundry_versions.js https://foundryvtt.com/releases/
   published_majors=$(awk -v pattern='<h2 class="border">Version [0-9]+<\/h2>' '$0~pattern {print $3}' foundry_versions.js | sed 's/<\/h2>//g')
-  published_minors=$(awk -v pattern="Release ${installed_major}.[0-9]{1,3}" '$0~pattern {print $NF}' foundry_versions.js | sed 's/<\/a>//g')
+  published_minors=$(awk -v pattern="Release ${installed_major}.[0-9]{1,3}" '$0~pattern {print $NF}' foundry_versions.js | sed 's/<\/a>//g' | awk -F '.' '{print $2}')
   # Convert from text output to a list
   SAVE_IFS=$IFS
   IFS=$'\n'
