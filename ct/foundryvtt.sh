@@ -16,53 +16,186 @@ var_version="${var_version:-13}"
 var_arm64="${var_arm64:-yes}"
 var_unprivileged="${var_unprivileged:-1}"
 
+
 header_info "$APP"
 variables
 color
 catch_errors
 
 custom_app_settings() {
-    export DOWNLOAD_URL=$(whiptail --title "Timed URL" \
+  if [[ -z "${DOWNLOAD_URL:-}" ]]
+  then
+    export DOWNLOAD_URL=$(whiptail --title "FoundryVTT" \
     --inputbox "Timed URL from your profile's 'Purchased Licenses' page" 8 60 3>&1 1>&2 2>&3)
+  fi
+}
+
+update_get_current_versions() {
+  if [ -f ".release" ]
+  then
+    installed_major=$(cat .release | awk -F '.' '{print $1}')
+    installed_minor=$(cat .release | awk -F '.' '{print $2}')
+  else
+    installed_major=0
+    installed_minor=0
+  fi
+}
+
+update_get_latest_release_versions() {
+  wget -q --output-document=foundry_versions.js https://foundryvtt.com/releases/
+  published_majors=$(awk -v pattern='<h2 class="border">Version [0-9]+<\/h2>' '$0~pattern {print $3}' foundry_versions.js | sed 's/<\/h2>//g')
+  published_minors=$(awk -v pattern="Release ${installed_major}.[0-9]{1,3}" '$0~pattern {print $NF}' foundry_versions.js | sed 's/<\/a>//g')
+  # Convert from text output to a list
+  SAVE_IFS=$IFS
+  IFS=$'\n'
+  published_majors=($published_majors)
+  published_minors=($published_minors)
+  IFS=$SAVE_IFS
+  rm foundry_versions.js
+}
+
+update_offer_minor_update() {
+  if [ "${PHS_SILENT:-0}" -eq 1 ]
+  then
+    perform_minor_update=0
+  else
+    whiptail --title "FoundryVTT" \
+    --yesno "Minor version upgrades can be handled from the web UI automatically. Would you like to proceed here?" 8 60 3>&1 1>&2 2>&3
+    perform_minor_update=$?
+  fi
+}
+
+update_download_new_release() {
+  custom_app_settings
+  if wget -q --output-document=foundryvtt.zip "$DOWNLOAD_URL"
+  then
+    return 0
+  else
+    msg_error "${APP} download for update failed - aborting"
+    if [ -f foundryvtt.zip ] ; then rm foundryvtt.zip; fi
+    return 1
+  fi
+}
+
+update_perform_backup() {
+  mv foundryvtt foundryvtt.bak
+  mkdir foundryvtt
+  mv foundryvtt.zip foundryvtt
+}
+
+update_install_new_release() {
+  cd foundryvtt
+
+  # Stop service or abort
+  systemctl stop foundryvtt
+  if systemctl is-active --quiet foundryvtt
+  then
+    msg_error "Failed to stop ${APP} - aborting update"
+    return 1
+  fi
+
+  # Unpack download
+  unzip foundryvtt.zip
+  rm foundryvtt.zip
+
+  # Modify NODE.js version if necessary
+  if [[ $DOWNLOAD_URL =~ $release_version_regex ]]
+  then
+    major_version="${BASH_REMATCH[1]}"
+    minor_version="${BASH_REMATCH[2]}"
+    if [ "$major_version" -ge 14 ]
+    then
+        msg_info "Installing Node.js"
+        NODE_VERSION="24" setup_nodejs
+        msg_ok "Node.js installed"
+    else
+        msg_info "Installing Node.js"
+        NODE_VERSION="22" setup_nodejs
+        msg_ok "Node.js installed"
+    fi
+
+    # Update Release file
+    RELEASE="$major_version.$minor_version"
+    echo "${RELEASE}" >/opt/foundryvtt/.release
+  fi
+
+  # Test new install
+  systemctl start foundryvtt
+  if systemctl is-active --quiet foundryvtt
+  then
+    msg_info "Successfully updated ${APP}"
+    # remove backup after successful install
+    rm -rf /opt/foundryvtt/foundryvtt.bak
+  else
+    msg_error "Failed to restart ${APP} with new version - reverting"
+    cd /opt/foundryvtt
+    rm -rf foundryvtt
+    mv foundryvtt.bak foundryvtt
+    systemctl start foundryvtt
+    return 1
+  fi
+}
+
+update_cleanup() {
+  cd /opt/foundryvtt
+  if [ -f foundryvtt/foundryvtt.zip ]; then rm foundryvtt/foundryvtt.zip; fi
+  if [ -f foundry_versions.js ]; then rm foundry_versions.js; fi
+  if [ -d foundryvtt.bak ]; then rm -rf foundryvtt.bak; fi
+  
 }
 
 function update_script() {
-#   header_info
-#   check_container_storage
-#   check_container_resources
+  header_info
+  check_container_storage
+  check_container_resources
 
-#   if [[ ! -f /opt/foundryvtt ]]; then
-#     msg_error "No ${APP} Installation Found!"
-#     exit
-#   fi
+  SAVE_PWD=$(pwd)
+  cd /opt/foundryvtt
 
-#   NODE_VERSION="22" setup_nodejs
-#   [[ $DOWNLOAD_URL =~ release_version_regex ]]
-#   RELEASE=${BASH_REMATCH[1]}
-#   if [[ -f /opt/actualbudget-data/config.json ]]; then
-#     if check_for_gh_release "actualbudget" "actualbudget/actual"; then
-#       msg_info "Stopping Service"
-#       systemctl stop actualbudget
-#       msg_ok "Stopped Service"
+  # Update-specific variables
+  installed_major=""
+  installed_minor=""
+  published_majors=""
+  published_minors=""
 
-#       msg_info "Updating Actual Budget to ${RELEASE}"
-#       $STD npm update -g @actual-app/sync-server
-#       echo "${RELEASE}" >~/.actualbudget
-#       msg_ok "Updated Actual Budget to ${RELEASE}"
+  if ! update_get_current_versions; then exit 1; fi
+  if ! update_get_latest_release_versions; then exit; fi
 
-#       msg_info "Starting Service"
-#       systemctl start actualbudget
-#       msg_ok "Started Service"
-#       msg_ok "Updated successfully!"
-#     fi
-#   else
-#     msg_warn "Old Installation Found, you need to migrate your data and recreate to a new container"
-#     msg_warn "Please follow the instructions on the Actual Budget website to migrate your data"
-#     msg_warn "https://actualbudget.org/docs/backup-restore/backup"
-#     exit
-#   fi
-#   exit
-  msg_warn "FoundryVTT should be updated from the server's Web UI and not from the container script."
+  if [ "$installed_major" -lt "${published_majors[0]}" ]
+  then
+    # Update major version
+    if ! update_download_new_release; then exit; fi
+    if ! update_perform_backup; then exit; fi
+    if ! update_install_new_release; then exit; fi
+    if ! update_cleanup; then exit; fi
+  elif [ "$installed_major" -eq "${published_majors[0]}" ]
+  then
+    if [ "$installed_minor" -eq "${published_minors[0]}" ]
+    then
+      msg_info "${APP} is up-to-date. Nothing to do."
+    elif [ "$installed_minor" -lt "${published_minors[0]}" ]
+    then
+      # Update Minor Version
+      update_offer_minor_update
+      if [ "$perform_minor_update" -eq 0 ]
+      then
+        if ! update_download_new_release; then exit; fi
+        if ! update_perform_backup; then exit; fi
+        if ! update_install_new_release; then exit; fi
+        if ! update_cleanup; then exit; fi
+      fi
+    else
+      msg_error "Installed minor version of ${APP} is greater than any published version"
+      rm foundry_versions.js
+      exit
+    fi
+  else
+    msg_error "Installed major version of ${APP} greater than any published version"
+    rm foundry_versions.js
+    exit
+  fi
+  update_cleanup
+  cd "$SAVE_PWD"
 }
 
 start
