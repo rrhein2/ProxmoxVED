@@ -157,6 +157,7 @@ function update_script() {
   installed_minor=""
   published_majors=""
   published_minors=""
+  release_version_regex="^.*releases\/([0-9]+)\.([0-9]+).*$"
 
   if ! update_get_current_versions; then exit 1; fi
   if ! update_get_latest_release_versions; then exit; fi
